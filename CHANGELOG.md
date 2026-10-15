@@ -12,6 +12,14 @@ follows:
    releases, and Linux kernel updates. They're also made to fix bugs and add
    features to the build infrastructure.
 
+## v0.2.0
+
+* Updated to Buildroot 2025.11.2 via nerves_system_br 1.33.4
+* Updated Linux kernel to 5.15.180 (kept at 5.15 for TinyEMU compatibility)
+* Updated toolchain to GCC 14.2.0 (nerves_toolchain_riscv64_nerves_linux_musl 14.2.0)
+* Updated Erlang/OTP to 28 and Elixir to 1.17+
+* Requires Nerves ~> 1.13
+
 ## v0.1.0
 
 This is the initial release.

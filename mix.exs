@@ -1,7 +1,7 @@
 defmodule NervesSystemJSLinux.MixProject do
   use Mix.Project
 
-  @github_organization "fhunleth"
+  @github_organization "nerves-project"
   @app :nerves_system_jslinux
   @source_url "https://github.com/#{@github_organization}/#{@app}"
   @version Path.join(__DIR__, "VERSION")
@@ -12,24 +12,23 @@ defmodule NervesSystemJSLinux.MixProject do
     [
       app: @app,
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.17",
       compilers: Mix.compilers() ++ [:nerves_package],
       nerves_package: nerves_package(),
       description: description(),
       package: package(),
       deps: deps(),
       aliases: [loadconfig: [&bootstrap/1]],
-      docs: docs(),
-      preferred_cli_env: %{
-        docs: :docs,
-        "hex.build": :docs,
-        "hex.publish": :docs
-      }
+      docs: docs()
     ]
   end
 
   def application do
     []
+  end
+
+  def cli do
+    [preferred_envs: %{docs: :docs, "hex.build": :docs, "hex.publish": :docs}]
   end
 
   defp bootstrap(args) do
@@ -56,8 +55,7 @@ defmodule NervesSystemJSLinux.MixProject do
         {"TARGET_OS", "linux"},
         {"TARGET_ABI", "musl"},
         {"TARGET_GCC_FLAGS",
-          "-mabi=lp64d -fstack-protector-strong -march=rv64imafdcv -fPIE -pie -Wl,-z,now -Wl,-z,relro"}
-
+         "-mabi=lp64d -fstack-protector-strong -march=rv64imafdc -fPIE -pie -Wl,-z,now -Wl,-z,relro"}
       ],
       checksum: package_files()
     ]
@@ -65,9 +63,9 @@ defmodule NervesSystemJSLinux.MixProject do
 
   defp deps do
     [
-      {:nerves, "~> 1.6.0 or ~> 1.7.15 or ~> 1.8", runtime: false},
-      {:nerves_system_br, "1.21.2", runtime: false},
-      {:nerves_toolchain_riscv64_nerves_linux_musl, "~> 1.6.0", runtime: false},
+      {:nerves, "~> 1.13", runtime: false},
+      {:nerves_system_br, "1.33.4", runtime: false},
+      {:nerves_toolchain_riscv64_nerves_linux_musl, "~> 14.2.0", runtime: false},
       {:nerves_system_linter, "~> 0.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false}
     ]
@@ -81,7 +79,7 @@ defmodule NervesSystemJSLinux.MixProject do
     [
       extras: ["README.md", "CHANGELOG.md"],
       main: "readme",
-      assets: "assets",
+      assets: %{"assets" => "./assets"},
       source_ref: "v#{@version}",
       source_url: @source_url,
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
@@ -104,6 +102,7 @@ defmodule NervesSystemJSLinux.MixProject do
       "fwup-revert.conf",
       "fwup.conf",
       "LICENSE",
+      "linux-5.15.defconfig",
       "mix.exs",
       "nerves_defconfig",
       "post-build.sh",
