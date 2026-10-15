@@ -15,7 +15,7 @@ proof of concept and a browser-only way of demoing some simple features.
 | CPU                  | 64 bit RISC-V                   |
 | Memory               | 128 MB (configurable)           |
 | Storage              | Temporary 			 |
-| Linux kernel         | 5.19                            |
+| Linux kernel         | 6.18                            |
 | IEx terminal         | VirtIO `ttyhvc0`                |
 | GPIO, I2C, SPI       | Emulated - [Elixir Circuits](https://github.com/elixir-circuits) |
 | Display              | Yes, but not supported yet      |
@@ -44,7 +44,7 @@ systems](https://hexdocs.pm/nerves/customizing-systems.html).
 ## Example use
 
 This example assumes some familiarity with Nerves. To use this system, you'll
-need OTP 25. Follow the [Nerves installation
+need OTP 29. Follow the [Nerves installation
 instructions](https://github.com/nerves-project/nerves/blob/main/docs/Installation.md)
 for additional system dependencies.
 
@@ -61,7 +61,7 @@ the top. It's ok to delete targets that you don't plan on using.
 Then add the `:nerves_system_jslinux` dependency to the `deps` function:
 
 ```elixir
-    {:nerves_system_jslinux, "~> 0.1", runtime: false, targets: :jslinux},
+    {:nerves_system_jslinux, "~> 0.3", runtime: false, targets: :jslinux},
 ```
 
 This will load the latest released version. To use the latest code on the `main`

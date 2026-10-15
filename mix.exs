@@ -63,9 +63,9 @@ defmodule NervesSystemJSLinux.MixProject do
 
   defp deps do
     [
-      {:nerves, "~> 1.13", runtime: false},
-      {:nerves_system_br, "1.33.4", runtime: false},
-      {:nerves_toolchain_riscv64_nerves_linux_musl, "~> 14.2.0", runtime: false},
+      {:nerves, "~> 1.15 or ~> 2.0 or ~> 2.0.0-dev", runtime: false},
+      {:nerves_system_br, "1.35.1", runtime: false},
+      {:nerves_toolchain_riscv64_nerves_linux_musl, "~> 15.3.1", runtime: false},
       {:nerves_system_linter, "~> 0.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false}
     ]
@@ -102,7 +102,7 @@ defmodule NervesSystemJSLinux.MixProject do
       "fwup-revert.conf",
       "fwup.conf",
       "LICENSE",
-      "linux-5.15.defconfig",
+      "linux-6.18.defconfig",
       "mix.exs",
       "nerves_defconfig",
       "post-build.sh",

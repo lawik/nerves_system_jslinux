@@ -12,6 +12,16 @@ follows:
    releases, and Linux kernel updates. They're also made to fix bugs and add
    features to the build infrastructure.
 
+## v0.3.0
+
+* Updated to Buildroot 2026.08 via nerves_system_br 1.35.1
+* Updated Linux kernel to 6.18.57 (LTS). The config follows Frank's
+  unfinished linux-6.1 branch: ARCH_VIRT, NONPORTABLE, RISCV_SBI_V01 for the
+  BBL-provided legacy SBI
+* Updated toolchain to GCC 15.3 (nerves_toolchain_riscv64_nerves_linux_musl 15.3.1)
+* Updated Erlang/OTP to 29.1.1 and Elixir to 1.20
+* Requires Nerves ~> 1.15
+
 ## v0.2.0
 
 * Updated to Buildroot 2025.11.2 via nerves_system_br 1.33.4
