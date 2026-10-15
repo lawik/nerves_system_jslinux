@@ -21,6 +21,9 @@ follows:
 * Updated toolchain to GCC 15.3 (nerves_toolchain_riscv64_nerves_linux_musl 15.3.1)
 * Updated Erlang/OTP to 29.1.1 and Elixir to 1.20
 * Requires Nerves ~> 1.15
+* Requires a TinyEMU with two fixes (see ../tinyemu, branch
+  emscripten-modern): a writable scounteren.TM bit, and a reserved-memory
+  node for the BBL firmware region. Linux 6.x needs both; 5.15 did not.
 
 ## v0.2.0
 
