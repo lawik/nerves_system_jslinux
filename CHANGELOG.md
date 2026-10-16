@@ -28,6 +28,11 @@ follows:
   driver that layers the fwup-written block over the built-in defaults,
   and a fix for building the qemu-riscv board without distro boot.
 * Kernel: F2FS enabled. f2fs-tools added.
+* The application partition ships pre-formatted (`images/appfs.img`, made
+  by host f2fs-tools in post-build.sh and written by the `complete` task)
+  and erlinit mounts it with `sync,dirsync`. The browser persists the disk
+  in IndexedDB but only sees what the guest has flushed, so writes are made
+  durable immediately instead of waiting for an f2fs checkpoint.
 * Requires a TinyEMU with the OpenSBI fixes (time/mvendorid/PMP CSRs,
   HTIF `reg` in the device tree, HTIF keyboard input).
 

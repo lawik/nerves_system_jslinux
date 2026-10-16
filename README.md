@@ -9,7 +9,9 @@ boots the way a real device does: OpenSBI, then U-Boot, which reads the Nerves
 U-Boot environment from a virtio disk image laid out by fwup (MBR, A/B kernel
 slots, A/B rootfs partitions, an f2fs application partition) and boots the
 active slot. Firmware updates, reverts and a persistent application partition
-all work inside one browser session; nothing persists across page loads.
+all work in the browser, and the disk is kept in the browser's IndexedDB
+(see jsnerves) so the application partition and firmware state survive
+page loads.
 
 ![JSLinux Screenshot](assets/images/screenshot.png)
 
