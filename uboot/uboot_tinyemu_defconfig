@@ -1,0 +1,60 @@
+CONFIG_RISCV=y
+CONFIG_SYS_MALLOC_LEN=0x800000
+CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
+CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x80200000
+CONFIG_ENV_SIZE=0x20000
+CONFIG_ENV_OFFSET=0x2000
+CONFIG_DEFAULT_DEVICE_TREE="qemu-virt64"
+CONFIG_BOOTCOUNT_BOOTLIMIT=1
+CONFIG_SYS_LOAD_ADDR=0x80200000
+# CONFIG_PCI is not set
+CONFIG_TARGET_QEMU_VIRT=y
+CONFIG_ARCH_RV64I=y
+CONFIG_RISCV_SMODE=y
+CONFIG_ENV_VARS_UBOOT_CONFIG=y
+# CONFIG_EFI_LOADER is not set
+CONFIG_TIMESTAMP=y
+# CONFIG_BOOTSTD_BOOTCOMMAND is not set
+CONFIG_SUPPORT_RAW_INITRD=y
+CONFIG_BOOTDELAY=1
+CONFIG_USE_BOOTCOMMAND=y
+CONFIG_BOOTCOMMAND="virtio scan; env indirect kernel_lba ${nerves_fw_active}.kernel_lba; env indirect bootargs ${nerves_fw_active}.kernel_args; echo \"Booting Nerves slot ${nerves_fw_active} from LBA ${kernel_lba}\"; virtio read ${kernel_addr_r} ${kernel_lba} 0x8000; booti ${kernel_addr_r} - ${fdtcontroladdr}"
+CONFIG_USE_PREBOOT=y
+CONFIG_PREBOOT="setenv fdt_addr ${fdtcontroladdr}; fdt addr ${fdtcontroladdr}; echo Nerves: active=${nerves_fw_active} upgrade_available=${upgrade_available} bootcount=${bootcount}"
+CONFIG_CONSOLE_MUX=y
+CONFIG_SYS_STDIO_DEREGISTER=y
+CONFIG_DISPLAY_CPUINFO=y
+CONFIG_DISPLAY_BOARDINFO=y
+CONFIG_CYCLIC=y
+# CONFIG_BOARD_INIT is not set
+CONFIG_LAST_STAGE_INIT=y
+CONFIG_HUSH_PARSER=y
+CONFIG_CMD_NVEDIT_INDIRECT=y
+CONFIG_CMD_PART=y
+# CONFIG_CMD_PCI is not set
+# CONFIG_CMD_EXT2 is not set
+# CONFIG_CMD_EXT4 is not set
+# CONFIG_CMD_FAT is not set
+# CONFIG_CMD_FS_GENERIC is not set
+# CONFIG_ISO_PARTITION is not set
+# CONFIG_EFI_PARTITION is not set
+CONFIG_ENV_IS_IN_VIRTIO=y
+CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+# CONFIG_NET is not set
+# CONFIG_AHCI is not set
+# CONFIG_SCSI_AHCI is not set
+CONFIG_BOOTCOUNT_LIMIT=y
+CONFIG_BOOTCOUNT_ENV=y
+CONFIG_BOOTCOUNT_ALTBOOTCMD="if test \"${nerves_fw_active}\" = a; then setenv nerves_fw_active b; else setenv nerves_fw_active a; fi; setenv upgrade_available 0; setenv bootcount 0; saveenv; run bootcmd"
+CONFIG_DM_KEYBOARD=y
+# CONFIG_MTD is not set
+# CONFIG_DM_RNG is not set
+# CONFIG_DM_RTC is not set
+# CONFIG_SCSI is not set
+# CONFIG_SYS_NS16550 is not set
+# CONFIG_SIFIVE_SERIAL is not set
+# CONFIG_USB is not set
+# CONFIG_VIDEO is not set
+CONFIG_SHA256=y
+CONFIG_MD5=y
+CONFIG_HEXDUMP=y

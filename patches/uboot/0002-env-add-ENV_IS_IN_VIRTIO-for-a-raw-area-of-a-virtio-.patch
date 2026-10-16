@@ -1,0 +1,215 @@
+From ca74f9649ca9db79cddd2c0dc060821b60f44587 Mon Sep 17 00:00:00 2001
+From: Lars Wikman <lars@underjord.io>
+Date: Fri, 16 Oct 2026 01:08:10 +0200
+Subject: [PATCH 2/2] env: add ENV_IS_IN_VIRTIO for a raw area of a virtio
+ block device
+
+Load and save the environment from CONFIG_ENV_OFFSET on virtio block
+device CONFIG_ENV_VIRTIO_DEVICE, without a partition table lookup. This
+matches how fwup lays out a U-Boot environment block on Nerves disk
+images, and gives the bootcount/upgrade_available mechanism a writable
+backend on virtio-only machines such as TinyEMU.
+
+Signed-off-by: Lars Wikman <lars@underjord.io>
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01AwVxNHSmhVTamvcP1RTZHp
+---
+ env/Kconfig            |  19 +++++++-
+ env/Makefile           |   1 +
+ env/env.c              |   3 ++
+ env/virtio.c           | 101 +++++++++++++++++++++++++++++++++++++++++
+ include/env_internal.h |   1 +
+ 5 files changed, 123 insertions(+), 2 deletions(-)
+ create mode 100644 env/virtio.c
+
+diff --git a/env/Kconfig b/env/Kconfig
+index 7abd82ab..5af3fc6b 100644
+--- a/env/Kconfig
++++ b/env/Kconfig
+@@ -74,7 +74,8 @@ config ENV_IS_DEFAULT
+ 		     !ENV_IS_IN_MMC && !ENV_IS_IN_NAND && \
+ 		     !ENV_IS_IN_NVRAM && !ENV_IS_IN_ONENAND && \
+ 		     !ENV_IS_IN_REMOTE && !ENV_IS_IN_SPI_FLASH && \
+-		     !ENV_IS_IN_UBI && !ENV_IS_IN_MTD && !ENV_IS_IN_SCSI
++		     !ENV_IS_IN_UBI && !ENV_IS_IN_MTD && !ENV_IS_IN_SCSI && \
++		     !ENV_IS_IN_VIRTIO
+ 	select ENV_IS_NOWHERE
+ 
+ config ENV_IS_NOWHERE
+@@ -287,6 +288,20 @@ config ENV_IS_IN_NAND
+ 	  Currently, CONFIG_ENV_OFFSET_REDUND is not supported when
+ 	  using CONFIG_ENV_OFFSET_OOB.
+ 
++config ENV_IS_IN_VIRTIO
++	bool "Environment in a raw area of a virtio block device"
++	depends on VIRTIO_BLK
++	help
++	  Store the environment in a raw (unpartitioned) area of a virtio
++	  block device, CONFIG_ENV_OFFSET bytes from the start of the device
++	  and CONFIG_ENV_SIZE bytes long. Nothing is scanned for; the device
++	  is virtio block device CONFIG_ENV_VIRTIO_DEVICE.
++
++config ENV_VIRTIO_DEVICE
++	int "virtio block device number holding the environment"
++	depends on ENV_IS_IN_VIRTIO
++	default 0
++
+ config ENV_IS_IN_SCSI
+ 	bool "Environment in an SCSI device"
+ 	depends on SCSI
+@@ -621,7 +636,7 @@ config ENV_ADDR_REDUND
+ config ENV_OFFSET
+ 	hex "Environment offset"
+ 	depends on ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \
+-		    ENV_IS_IN_SPI_FLASH || ENV_IS_IN_MTD
++		    ENV_IS_IN_SPI_FLASH || ENV_IS_IN_MTD || ENV_IS_IN_VIRTIO
+ 	default 0x3f8000 if ARCH_ROCKCHIP && ENV_IS_IN_MMC
+ 	default 0x140000 if ARCH_ROCKCHIP && ENV_IS_IN_SPI_FLASH
+ 	default 0xF0000 if ARCH_SUNXI
+diff --git a/env/Makefile b/env/Makefile
+index d11b8770..dd28cb1c 100644
+--- a/env/Makefile
++++ b/env/Makefile
+@@ -29,5 +29,6 @@ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_SPI_FLASH) += sf.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_MTD) += mtd.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_FLASH) += flash.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_SCSI) += scsi.o
++obj-$(CONFIG_$(PHASE_)ENV_IS_IN_VIRTIO) += virtio.o
+ 
+ CFLAGS_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)
+diff --git a/env/env.c b/env/env.c
+index 7a9c96b4..3c619588 100644
+--- a/env/env.c
++++ b/env/env.c
+@@ -49,6 +49,9 @@ static enum env_location env_locations[] = {
+ #ifdef CONFIG_ENV_IS_IN_SCSI
+ 	ENVL_SCSI,
+ #endif
++#ifdef CONFIG_ENV_IS_IN_VIRTIO
++	ENVL_VIRTIO,
++#endif
+ #ifdef CONFIG_ENV_IS_IN_NAND
+ 	ENVL_NAND,
+ #endif
+diff --git a/env/virtio.c b/env/virtio.c
+new file mode 100644
+index 00000000..0b733a57
+--- /dev/null
++++ b/env/virtio.c
+@@ -0,0 +1,101 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Environment in a raw area of a virtio block device.
++ *
++ * Modelled on env/scsi.c, but addresses the device by raw block offset
++ * (CONFIG_ENV_OFFSET) instead of a partition, which is how fwup lays out
++ * a U-Boot environment block on Nerves disk images.
++ */
++
++#include <asm/global_data.h>
++#include <blk.h>
++#include <env.h>
++#include <env_internal.h>
++#include <errno.h>
++#include <virtio.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++static env_t envbuf;
++
++static struct blk_desc *env_virtio_blk(void)
++{
++	static bool scanned;
++	struct blk_desc *desc;
++
++	if (!scanned) {
++		virtio_init();
++		scanned = true;
++	}
++
++	desc = blk_get_devnum_by_uclass_id(UCLASS_VIRTIO,
++					   CONFIG_ENV_VIRTIO_DEVICE);
++	if (!desc || !desc->blksz)
++		return NULL;
++	if (CONFIG_ENV_OFFSET % desc->blksz || CONFIG_ENV_SIZE % desc->blksz)
++		return NULL;
++
++	return desc;
++}
++
++static int env_virtio_save(void)
++{
++	struct blk_desc *desc = env_virtio_blk();
++	lbaint_t start, count;
++	int ret;
++
++	if (!desc)
++		return -ENOENT;
++
++	ret = env_export(&envbuf);
++	if (ret)
++		return ret;
++
++	start = CONFIG_ENV_OFFSET / desc->blksz;
++	count = CONFIG_ENV_SIZE / desc->blksz;
++	if (blk_dwrite(desc, start, count, &envbuf) != count)
++		return -EIO;
++
++	return 0;
++}
++
++static int env_virtio_load(void)
++{
++	struct blk_desc *desc = env_virtio_blk();
++	lbaint_t start, count;
++	int ret;
++
++	if (!desc) {
++		env_set_default("virtio block device not found", 0);
++		return -ENOENT;
++	}
++
++	start = CONFIG_ENV_OFFSET / desc->blksz;
++	count = CONFIG_ENV_SIZE / desc->blksz;
++	if (blk_dread(desc, start, count, &envbuf) != count) {
++		env_set_default("virtio block device read failed", 0);
++		return -EIO;
++	}
++
++	/*
++	 * Start from the built-in default environment and layer the stored
++	 * variables on top of it. The stored block is written by fwup and only
++	 * carries the firmware metadata and slot selection; bootcmd and
++	 * friends come from the U-Boot binary.
++	 */
++	env_set_default(NULL, 0);
++	ret = env_import((char *)&envbuf, 1, H_EXTERNAL | H_NOCLEAR);
++	if (ret) {
++		env_set_default("Cannot load environment", 0);
++	} else {
++		gd->env_addr = (ulong)envbuf.data;
++	}
++
++	return ret;
++}
++
++U_BOOT_ENV_LOCATION(virtio) = {
++	.location	= ENVL_VIRTIO,
++	ENV_NAME("virtio")
++	.load		= env_virtio_load,
++	.save		= ENV_SAVE_PTR(env_virtio_save),
++};
+diff --git a/include/env_internal.h b/include/env_internal.h
+index 0589c435..48eb3ab0 100644
+--- a/include/env_internal.h
++++ b/include/env_internal.h
+@@ -116,6 +116,7 @@ enum env_location {
+ 	ENVL_MTD,
+ 	ENVL_UBI,
+ 	ENVL_SCSI,
++	ENVL_VIRTIO,
+ 	ENVL_NOWHERE,
+ 
+ 	ENVL_COUNT,
+-- 
+2.53.0
+

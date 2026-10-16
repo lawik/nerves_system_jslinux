@@ -1,0 +1,44 @@
+From ab10b5e89a444a3f8fc755fa12f6a5918be94305 Mon Sep 17 00:00:00 2001
+From: Lars Wikman <lars@underjord.io>
+Date: Fri, 16 Oct 2026 01:08:10 +0200
+Subject: [PATCH 1/2] configs: qemu-riscv: only define distro boot targets with
+ DISTRO_DEFAULTS
+
+The board header unconditionally pulls in config_distro_bootcmd.h with
+NVME, SCSI and DHCP boot targets, so a configuration that disables
+DISTRO_DEFAULTS together with SCSI or networking fails to compile with
+"BOOT_TARGET_DEVICES_references_SCSI_without_CONFIG_SCSI". Guard the
+distro boot environment with CONFIG_DISTRO_DEFAULTS.
+
+Signed-off-by: Lars Wikman <lars@underjord.io>
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01AwVxNHSmhVTamvcP1RTZHp
+---
+ include/configs/qemu-riscv.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/configs/qemu-riscv.h b/include/configs/qemu-riscv.h
+index dad59cc0..85dd2a1f 100644
+--- a/include/configs/qemu-riscv.h
++++ b/include/configs/qemu-riscv.h
+@@ -21,6 +21,7 @@
+ 					"stdout=serial,vidconsole\0" \
+ 					"stderr=serial,vidconsole\0"
+ 
++#ifdef CONFIG_DISTRO_DEFAULTS
+ #define BOOT_TARGET_DEVICES(func) \
+ 	func(NVME, nvme, 0) \
+ 	func(VIRTIO, virtio, 0) \
+@@ -29,6 +30,9 @@
+ 	func(DHCP, dhcp, na)
+ 
+ #include <config_distro_bootcmd.h>
++#else
++#define BOOTENV
++#endif
+ 
+ #define CFG_EXTRA_ENV_SETTINGS \
+ 	CFG_STD_DEVICES_SETTINGS \
+-- 
+2.53.0
+

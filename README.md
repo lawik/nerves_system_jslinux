@@ -3,18 +3,22 @@
 [![CircleCI](https://circleci.com/gh/fhunleth/nerves_system_jslinux.svg?style=svg)](https://circleci.com/gh/fhunleth/nerves_system_jslinux)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_system_jslinux.svg "Hex version")](https://hex.pm/packages/nerves_system_jslinux)
 
-This is the base Nerves System configuration for a [JSLinux](#jslinux). This is
-not a complete Nerves port since some features like firmware updates and a
-persistent data partition are not implemented at all. The port is intended as a
-proof of concept and a browser-only way of demoing some simple features.
+This is the base Nerves System configuration for a [JSLinux](#jslinux): Nerves
+running on a RISC-V machine emulated by TinyEMU in a web browser. Since 0.4.0 it
+boots the way a real device does: OpenSBI, then U-Boot, which reads the Nerves
+U-Boot environment from a virtio disk image laid out by fwup (MBR, A/B kernel
+slots, A/B rootfs partitions, an f2fs application partition) and boots the
+active slot. Firmware updates, reverts and a persistent application partition
+all work inside one browser session; nothing persists across page loads.
 
 ![JSLinux Screenshot](assets/images/screenshot.png)
 
 | Feature              | Description                     |
 | -------------------- | ------------------------------- |
 | CPU                  | 64 bit RISC-V                   |
+| Boot                 | OpenSBI 1.8 + U-Boot 2026.07    |
 | Memory               | 128 MB (configurable)           |
-| Storage              | Temporary 			 |
+| Storage              | VirtIO block, A/B + app partition (in-memory in the browser) |
 | Linux kernel         | 6.18                            |
 | IEx terminal         | VirtIO `ttyhvc0`                |
 | GPIO, I2C, SPI       | Emulated - [Elixir Circuits](https://github.com/elixir-circuits) |

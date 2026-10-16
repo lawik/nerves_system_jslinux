@@ -12,6 +12,25 @@ follows:
    releases, and Linux kernel updates. They're also made to fix bugs and add
    features to the build infrastructure.
 
+## v0.4.0
+
+* Boot like a real Nerves device: OpenSBI (fw_jump) replaces the 2019 BBL
+  and U-Boot 2026.07 (S-mode, HTIF console, virtio-blk) loads the kernel
+  from the disk image. TinyEMU loads `fw_jump.bin` as the bios and
+  `u-boot.bin` as the kernel; both are now built by Buildroot and installed
+  in `images/`.
+* A/B firmware layout on a virtio disk, modelled on nerves_system_qemu_aarch64:
+  MBR, U-Boot environment block, A/B kernel slots, A/B rootfs partitions
+  and an f2fs application partition mounted on /root. `fwup-ops.conf`
+  provides revert/prevent-revert/factory-reset. U-Boot picks the slot from
+  `nerves_fw_active` and reverts via bootcount/upgrade_available.
+* U-Boot patches (in `patches/uboot`): an `ENV_IS_IN_VIRTIO` environment
+  driver that layers the fwup-written block over the built-in defaults,
+  and a fix for building the qemu-riscv board without distro boot.
+* Kernel: F2FS enabled. f2fs-tools added.
+* Requires a TinyEMU with the OpenSBI fixes (time/mvendorid/PMP CSRs,
+  HTIF `reg` in the device tree, HTIF keyboard input).
+
 ## v0.3.0
 
 * Updated to Buildroot 2026.08 via nerves_system_br 1.35.1
